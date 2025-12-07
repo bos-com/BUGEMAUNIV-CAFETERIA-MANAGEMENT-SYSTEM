@@ -99,7 +99,7 @@ export default function StaffDashboard({ staff }: StaffDashboardProps) {
         <div className="mb-10">
           <h2 className="text-xl font-bold">🍽️ Staff Panel</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {staff?.name || "Staff User"}
+            {staff?.full_name || "Staff User"}
           </p>
         </div>
 
