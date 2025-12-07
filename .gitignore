@@ -1,0 +1,28 @@
+# Dependencies
+/node_modules/
+
+# Next.js build output
+/.next/
+/out/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Mac / Windows files
+.DS_Store
+Thumbs.db
+
+# Supabase generated files (optional)
+.supabase/
+
+# Editor folders
+.vscode/
+.idea/
