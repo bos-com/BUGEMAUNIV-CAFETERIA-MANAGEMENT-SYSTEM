@@ -1,52 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Login from "@/app/auth/Login/page";
 import StudentDashboard from "@/app/student/dashboard/page";
 import StaffDashboard from "@/app/staff/dashboard/page";
 import AdminDashboard from "@/app/admin/dashboard/page";
-import Header from "@/components/layout/Header";
 import type { Student, Staff, UserType } from "@/types";
 
 export default function Home() {
-  const [user, setUser] = useState<Student | Staff | null>(null);
-  const [userType, setUserType] = useState<UserType | null>(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setUser(userData);
-      setUserType(userData.userType);
-    }
-  }, []);
+  const [user, setUser] = useState<any>(null);
 
   const handleLogin = (userData: Student | Staff, type: UserType) => {
-    setUser(userData);
-    setUserType(type);
+    const finalUser = { ...userData, userType: type };
+    setUser(finalUser);
+    localStorage.setItem("user", JSON.stringify(finalUser));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    setUserType(null);
-  };
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
 
+  // ---------------------------
+  // NOT LOGGED IN → SHOW LOGIN
+  // ---------------------------
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header user={user} userType={userType} onLogout={handleLogout} />
+  // ---------------------------
+  // STUDENT DASHBOARD
+  // ---------------------------
+  if (user.userType === "student") {
+    return <StudentDashboard student={user} />;
+  }
 
-      <main className="animate-fade-in">
-        {userType === "student" && (
-          <StudentDashboard student={user as Student} />
-        )}
-        {userType === "staff" && <StaffDashboard staff={user as Staff} />}
-        {userType === "admin" && <AdminDashboard admin={user as Staff} />}
-      </main>
-    </div>
-  );
+  // ---------------------------
+  // STAFF DASHBOARD
+  // ---------------------------
+  if (user.userType === "staff") {
+    return <StaffDashboard staff={user} />;
+  }
+
+  // ---------------------------
+  // ADMIN DASHBOARD
+  // ---------------------------
+  if (user.userType === "admin") {
+    return <AdminDashboard admin={user} />;
+  }
+
+  return null;
 }
