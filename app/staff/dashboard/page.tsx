@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import MealLogs from "@/components/staff/MealLogs";
 import QRScanner from "@/components/staff/QRScanner";
 import { supabase } from "@/lib/supabase";
-import type { StaffDashboardProps } from "../../types";
+import type { StaffDashboardProps } from "@/types";
+
 
 type TabType = "scanner" | "logs" | "reports";
 
