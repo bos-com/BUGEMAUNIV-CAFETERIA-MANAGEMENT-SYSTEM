@@ -4,7 +4,10 @@ import { useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
 
-export default function Login() {
+type LoginProps = {
+  onLogin: (userData: any, type: "student" | "staff" | "admin") => void;
+};
+export default function Login({ onLogin }: LoginProps) {
   const [regNumber, setRegNumber] = useState("");
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState("student");
