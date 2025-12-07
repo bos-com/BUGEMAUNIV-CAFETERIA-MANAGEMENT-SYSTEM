@@ -17,7 +17,7 @@ export default function AdminDashboard({ admin }: AdminDashboardProps) {
   const logout = () => {
     localStorage.removeItem("user");
     supabase.auth.signOut();
-    window.location.href = "/auth/Login";
+    window.location.href = "/welcome";
   };
 
   const tabs = [

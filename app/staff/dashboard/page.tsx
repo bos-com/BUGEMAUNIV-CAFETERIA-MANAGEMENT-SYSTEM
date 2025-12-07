@@ -23,7 +23,7 @@ export default function StaffDashboard({ staff }: StaffDashboardProps) {
   const logout = () => {
     localStorage.removeItem("user");
     supabase.auth.signOut();
-    window.location.href = "/auth/Login";
+    window.location.href = "/welcome";
   };
 
   return (

@@ -527,7 +527,7 @@ export default function StudentDashboardPage() {
               onClick={() => {
                 localStorage.removeItem("user");
                 supabase.auth.signOut();
-                window.location.href = "/auth/Login";
+                window.location.href = "/welcome";
               }}
               className="w-full bg-red-600 text-white py-2 rounded mt-3"
             >
