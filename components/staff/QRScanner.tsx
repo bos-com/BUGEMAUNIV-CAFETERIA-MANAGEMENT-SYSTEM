@@ -3,9 +3,16 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import jsQR from "jsqr";
 import { supabase } from "@/lib/supabase";
-import type { QRScannerProps, ScanResult, QRData } from "../../types";
+import type { QRScannerProps, ScanResult } from "../../types";
 
 type MealType = "breakfast" | "lunch" | "supper";
+
+interface QRData {
+  studentId: string;
+  regNumber: string;
+  mealType: MealType;
+  expires: string;
+}
 
 export default function QRScanner({ staff }: QRScannerProps) {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
