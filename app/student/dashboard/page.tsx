@@ -42,7 +42,9 @@ export default function StudentDashboardPage() {
 
   const [activeQrImage, setActiveQrImage] = useState<string | null>(null);
   const [activeQrData, setActiveQrData] = useState<string | null>(null);
-  const [activeQrExpiresAt, setActiveQrExpiresAt] = useState<number | null>(null);
+  const [activeQrExpiresAt, setActiveQrExpiresAt] = useState<number | null>(
+    null
+  );
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
 
   const [showSidebar, setShowSidebar] = useState(false);
@@ -293,7 +295,7 @@ export default function StudentDashboardPage() {
       const windowEnd = todayTime(MEAL_WINDOWS[meal].end).getTime();
 
       const { data: rows, error } = await supabase
-        .from<QRRow>("qr_codes")
+        .from ("qr_codes")
         .select("*")
         .eq("student_id", localStudent.id)
         .eq("meal_type", meal)
@@ -324,7 +326,9 @@ export default function StudentDashboardPage() {
         setActiveQrImage(created.qr_image_url || null);
         setActiveQrData(created.qr_data || null);
         setActiveQrExpiresAt(
-          created.expires_at ? new Date(created.expires_at).getTime() : windowEnd
+          created.expires_at
+            ? new Date(created.expires_at).getTime()
+            : windowEnd
         );
       }
     } catch (err) {
@@ -480,7 +484,9 @@ export default function StudentDashboardPage() {
       {/* OVERLAY */}
       <div
         className={`fixed inset-0 bg-black/40 z-40 transition ${
-          showSidebar ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          showSidebar
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setShowSidebar(false)}
       />
@@ -498,27 +504,42 @@ export default function StudentDashboardPage() {
 
         <div className="flex flex-col items-center space-y-3">
           <div className="w-28 h-28 rounded-full overflow-hidden border">
-            <img src={profileImage || "/default-avatar.png"} className="w-full h-full object-cover" />
+            <img
+              src={profileImage || "/default-avatar.png"}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <label className="w-full text-sm">
             <span className="text-xs text-muted-foreground">Upload photo</span>
-            <input type="file" onChange={uploadProfileImage} className="w-full" />
+            <input
+              type="file"
+              onChange={uploadProfileImage}
+              className="w-full"
+            />
           </label>
 
           <p className="text-lg font-medium">{localStudent.full_name}</p>
-          <p className="text-sm text-muted-foreground">{localStudent.reg_number}</p>
+          <p className="text-sm text-muted-foreground">
+            {localStudent.reg_number}
+          </p>
 
           {/* PASSWORD */}
           <div className="w-full mt-4">
-            <label className="text-xs text-muted-foreground">New password</label>
+            <label className="text-xs text-muted-foreground">
+              New password
+            </label>
             <input
               type="password"
               className="w-full px-3 py-2 border rounded mb-2"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-            <button onClick={changePassword} disabled={changingPassword} className="w-full bg-primary text-white py-2 rounded">
+            <button
+              onClick={changePassword}
+              disabled={changingPassword}
+              className="w-full bg-primary text-white py-2 rounded"
+            >
               {changingPassword ? "Updating..." : "Change password"}
             </button>
 
@@ -548,8 +569,12 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="bg-card p-6 rounded-xl border">
-            <p className="text-center text-4xl">{activeTab === "qr" ? "📱" : "📊"}</p>
-            <p className="text-center mt-2 font-medium">{activeTab === "qr" ? "QR Codes" : "Meal History"}</p>
+            <p className="text-center text-4xl">
+              {activeTab === "qr" ? "📱" : "📊"}
+            </p>
+            <p className="text-center mt-2 font-medium">
+              {activeTab === "qr" ? "QR Codes" : "Meal History"}
+            </p>
           </div>
         </div>
 
@@ -560,7 +585,9 @@ export default function StudentDashboardPage() {
               key={tab}
               onClick={() => setActiveTab(tab as any)}
               className={`px-4 py-3 text-sm border-b-2 ${
-                activeTab === tab ? "border-primary text-primary" : "text-muted-foreground border-transparent"
+                activeTab === tab
+                  ? "border-primary text-primary"
+                  : "text-muted-foreground border-transparent"
               }`}
             >
               {tab === "qr" ? "QR Codes" : "Meal History"}
@@ -574,26 +601,38 @@ export default function StudentDashboardPage() {
             {activeMealType ? (
               <div className="bg-card border rounded-xl p-6 text-center">
                 <p className="text-6xl">{getMealIcon(activeMealType)}</p>
-                <h3 className="text-xl font-semibold mt-3 capitalize">{activeMealType}</h3>
+                <h3 className="text-xl font-semibold mt-3 capitalize">
+                  {activeMealType}
+                </h3>
 
                 <div className="w-56 h-56 mx-auto rounded bg-muted mt-4 flex items-center justify-center overflow-hidden">
                   {activeQrImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={activeQrImage} className="w-full h-full object-cover" alt="QR code" />
+                    <img
+                      src={activeQrImage}
+                      className="w-full h-full object-cover"
+                      alt="QR code"
+                    />
                   ) : (
-                    <p className="text-muted-foreground text-sm">Preparing QR…</p>
+                    <p className="text-muted-foreground text-sm">
+                      Preparing QR…
+                    </p>
                   )}
                 </div>
 
                 <p className="text-sm mt-3 text-muted-foreground">
-                  Expires in <strong>{formatRemaining(activeQrExpiresAt ?? undefined)}</strong>
+                  Expires in{" "}
+                  <strong>
+                    {formatRemaining(activeQrExpiresAt ?? undefined)}
+                  </strong>
                 </p>
               </div>
             ) : (
               <div className="bg-card border rounded-xl p-6 text-center">
                 <p className="text-lg font-medium">No meal QR available</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Next: <strong>{capitalize(nextMealInfo.meal)}</strong> in {formatRemaining(nextMealInfo.start)}
+                  Next: <strong>{capitalize(nextMealInfo.meal)}</strong> in{" "}
+                  {formatRemaining(nextMealInfo.start)}
                 </p>
               </div>
             )}
@@ -609,20 +648,31 @@ export default function StudentDashboardPage() {
 
             {mealHistory.length > 0 ? (
               mealHistory.map((meal) => (
-                <div key={meal.id} className="p-4 border-b flex justify-between items-center">
+                <div
+                  key={meal.id}
+                  className="p-4 border-b flex justify-between items-center"
+                >
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{getMealIcon(meal.meal_type)}</span>
+                    <span className="text-3xl">
+                      {getMealIcon(meal.meal_type)}
+                    </span>
                     <div>
                       <p className="capitalize font-medium">{meal.meal_type}</p>
-                      <p className="text-sm text-muted-foreground">{new Date(meal.served_at).toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(meal.served_at).toLocaleString()}
+                      </p>
                     </div>
                   </div>
 
-                  <span className="text-sm text-green-600 font-medium">Served</span>
+                  <span className="text-sm text-green-600 font-medium">
+                    Served
+                  </span>
                 </div>
               ))
             ) : (
-              <p className="text-center py-10 text-muted-foreground">No meal history</p>
+              <p className="text-center py-10 text-muted-foreground">
+                No meal history
+              </p>
             )}
           </div>
         )}
