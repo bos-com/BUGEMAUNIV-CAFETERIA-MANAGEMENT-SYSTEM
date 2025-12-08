@@ -434,7 +434,7 @@ export default function StudentDashboardPage() {
   const generateQRCodeDataURL = async (text: string, size = 300) => {
     // dynamic import to avoid SSR issues
     try {
-      const QRCode = await import("qr_codes");
+      const QRCode = await import("qrcode");
       // @ts-ignore
       return await QRCode.toDataURL(text, { width: size, margin: 1 });
     } catch (err) {
