@@ -11,7 +11,7 @@ type LoginProps = {
 export default function Login({ onLogin }: LoginProps) {
   const [regNumber, setRegNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("student");
+  const [userType, setUserType] = useState<"student" | "staff" | "admin">("student");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -107,9 +107,9 @@ export default function Login({ onLogin }: LoginProps) {
             {/* User Type Selector */}
             <div className="grid grid-cols-3 gap-2 p-1.5 bg-muted rounded-xl">
               {[
-                { type: "student", label: "Student", icon: "🎓" },
-                { type: "staff", label: "Staff", icon: "👨‍💼" },
-                { type: "admin", label: "Admin", icon: "⚙️" },
+                { type: "student" as "student", label: "Student", icon: "🎓" },
+                { type: "staff" as "staff", label: "Staff", icon: "👨‍💼" },
+                { type: "admin" as "admin", label: "Admin", icon: "⚙️" },
               ].map((option) => (
                 <button
                   key={option.type}
