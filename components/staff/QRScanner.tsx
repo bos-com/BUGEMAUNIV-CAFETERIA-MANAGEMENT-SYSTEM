@@ -18,7 +18,7 @@ export default function QRScanner({ staff }: QRScannerProps) {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [manualQR, setManualQR] = useState<string>("");
-  const [scanning, setScanning] = useState<boolean>(false);
+
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>("");
 
@@ -27,16 +27,19 @@ export default function QRScanner({ staff }: QRScannerProps) {
   const streamRef = useRef<MediaStream | null>(null);
 
   /* ============================================================
-     MOBILE CAMERA SAFE START
+     AUTO-START CAMERA ON LOAD
   ============================================================ */
+  useEffect(() => {
+    startCamera();
+    return stopCamera; // cleanup
+  }, [selectedDevice]);
+
   const startCamera = async () => {
     try {
-      // Stop previous stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
 
-      // Enumerate devices FIRST (mobile requirement)
       const deviceList = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = deviceList.filter((d) => d.kind === "videoinput");
       setDevices(videoDevices);
@@ -44,7 +47,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
       let cameraId = selectedDevice;
 
       if (!cameraId && videoDevices.length > 0) {
-        // Pick back camera first
         const backCam =
           videoDevices.find((d) =>
             d.label.toLowerCase().includes("back")
@@ -58,8 +60,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
         video: {
           deviceId: cameraId ? { exact: cameraId } : undefined,
           facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
         },
         audio: false,
       });
@@ -68,8 +68,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-
-        // iOS autoplay requirements
         videoRef.current.setAttribute("playsinline", "true");
         videoRef.current.setAttribute("muted", "true");
         videoRef.current.setAttribute("autoplay", "true");
@@ -81,45 +79,38 @@ export default function QRScanner({ staff }: QRScannerProps) {
         await videoRef.current.play();
       }
 
-      setScanning(true);
       scanLoop();
     } catch (err) {
       console.error("Camera error:", err);
-
       setScanResult({
         success: false,
-        message:
-          "Camera access failed. Enable permissions in browser settings and reload.",
+        message: "Camera permission denied. Please allow access.",
         type: "error",
         icon: "📵",
       });
     }
   };
 
-  /* ============================================================
-     STOP CAMERA
-  ============================================================ */
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
     }
-    setScanning(false);
   };
 
   /* ============================================================
-     QR PROCESSING
+     PROCESS QR CODE
   ============================================================ */
   const processQRCode = async (qrData: string): Promise<void> => {
+    stopCamera();
     setIsLoading(true);
     setScanResult(null);
 
     try {
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // vibration feedback
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
       const parsedData: QRData = JSON.parse(qrData);
       const { studentId, regNumber, mealType, expires } = parsedData;
 
-      // VALIDATION: Expired QR
       if (new Date(expires) < new Date()) {
         setScanResult({
           success: false,
@@ -130,7 +121,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
         return;
       }
 
-      // VALIDATION: Student Exists?
       const { data: student } = await supabase
         .from("students")
         .select("*")
@@ -148,7 +138,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
         return;
       }
 
-      // VALIDATION: QR not used already
       const { data: existingQR } = await supabase
         .from("qr_codes")
         .select("*")
@@ -168,13 +157,11 @@ export default function QRScanner({ staff }: QRScannerProps) {
         return;
       }
 
-      // Mark QR as used
       await supabase
         .from("qr_codes")
         .update({ is_used: true })
         .eq("id", existingQR.id);
 
-      // Add meal log
       await supabase.from("meal_logs").insert([
         {
           student_id: studentId,
@@ -192,8 +179,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
         student,
         mealType,
       });
-
-      stopCamera();
     } catch (err) {
       setScanResult({
         success: false,
@@ -207,13 +192,13 @@ export default function QRScanner({ staff }: QRScannerProps) {
   };
 
   /* ============================================================
-     SCANNER LOOP
+     SCAN LOOP (runs immediately)
   ============================================================ */
   const scanLoop = () => {
-    if (!videoRef.current || !canvasRef.current || !scanning) return;
-
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -221,15 +206,12 @@ export default function QRScanner({ staff }: QRScannerProps) {
     canvas.height = video.videoHeight;
 
     const loop = () => {
-      if (!scanning) return;
-
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
       const code = jsQR(img.data, canvas.width, canvas.height);
 
       if (code) {
-        stopCamera();
         processQRCode(code.data);
         return;
       }
@@ -239,9 +221,6 @@ export default function QRScanner({ staff }: QRScannerProps) {
 
     requestAnimationFrame(loop);
   };
-
-  /* Cleanup on unmount */
-  useEffect(() => stopCamera, []);
 
   const getMealIcon = (meal: MealType) =>
     meal === "breakfast" ? "🥞" : meal === "lunch" ? "🍲" : "🍽️";
@@ -275,28 +254,10 @@ export default function QRScanner({ staff }: QRScannerProps) {
           playsInline
           muted
           autoPlay
-          className={`${scanning ? "block" : "hidden"} w-full rounded-xl`}
+          className="w-full rounded-xl"
         />
 
         <canvas ref={canvasRef} className="hidden" />
-
-        {!scanning && (
-          <div className="text-muted-foreground py-10">
-            <span className="text-6xl">📷</span>
-            <p className="mt-4">Camera preview will appear here</p>
-          </div>
-        )}
-
-        <button
-          onClick={() => (scanning ? stopCamera() : startCamera())}
-          className={`mt-6 px-6 py-3 rounded-lg font-medium ${
-            scanning
-              ? "bg-destructive text-destructive-foreground"
-              : "bg-primary text-primary-foreground"
-          }`}
-        >
-          {scanning ? "Stop Scanning" : "Start Camera"}
-        </button>
       </div>
 
       {/* MANUAL INPUT */}
@@ -366,8 +327,7 @@ export default function QRScanner({ staff }: QRScannerProps) {
                   </p>
                   <p>
                     <strong>Meal:</strong>{" "}
-                    {getMealIcon(scanResult.mealType!)}{" "}
-                    {scanResult.mealType}
+                    {getMealIcon(scanResult.mealType!)} {scanResult.mealType}
                   </p>
                 </div>
               )}
