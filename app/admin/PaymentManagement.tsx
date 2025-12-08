@@ -198,7 +198,7 @@ export default function PaymentManagement() {
                         <div className="text-sm font-medium text-foreground">{payment.students?.full_name}</div>
                         <div className="text-sm text-muted-foreground">{payment.students?.reg_number}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-success">${amount.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-success">shs{amount.toFixed(2)}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{payment.meals_added} meals</td>
                       <td className="px-6 py-4 text-sm text-muted-foreground">
                         {new Date(payment.payment_date).toLocaleDateString()}
