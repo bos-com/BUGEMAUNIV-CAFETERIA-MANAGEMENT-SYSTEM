@@ -380,6 +380,8 @@ export default function StudentDashboardPage() {
         meal_type: mealType,
         timestamp: new Date().toISOString(),
         expires: new Date(windowEndMs).toISOString(),
+        qrData: "",
+        id: ""
       };
 
       const qrText = JSON.stringify(qrObj);

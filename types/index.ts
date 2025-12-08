@@ -1,5 +1,6 @@
 import { SyntheticEvent } from 'react';
 
+
 // Database types matching your Supabase schema
 export interface Student {
   id: string;
@@ -60,13 +61,15 @@ export interface Payment {
   students?: Student;
 }
 
-export interface QRData {
-  studentId: string;
-  regNumber: string;
-  mealType: 'breakfast' | 'lunch' | 'supper';
+export interface QRCodeData {
+  student_id: number;
+  reg_number: string;
+  meal_type: string;
   timestamp: string;
-  expires: string;
+  expires?: string;
 }
+
+
 
 export interface ScanResult {
   success: boolean;
