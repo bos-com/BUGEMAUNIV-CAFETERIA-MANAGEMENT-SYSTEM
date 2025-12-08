@@ -73,6 +73,13 @@ export default function StudentDashboardPage() {
         return;
       }
 
+      // ensure it has id/reg_number fields
+      if (!stored.id || !stored.reg_number) {
+        console.error("Stored user missing id or reg_number:", stored);
+        window.location.href = "/login";
+        return;
+      }
+
       setLocalStudent(stored);
     } catch (err) {
       console.error("Failed to load student", err);
@@ -114,6 +121,7 @@ export default function StudentDashboardPage() {
      LOAD STUDENT DATA
      ================================================================ */
   const fetchStudentData = async () => {
+    if (!localStudent) return;
     try {
       setLoading(true);
 
@@ -139,8 +147,8 @@ export default function StudentDashboardPage() {
       setMealHistory(meals || []);
 
       let balance = 0;
-      payments?.forEach((p) => (balance += p.meals_added));
-      meals?.forEach(() => balance--);
+      payments?.forEach((p) => (balance += p.meals_added || 0));
+      meals?.forEach(() => (balance -= 1));
 
       setMealBalance(balance);
     } catch (err) {
@@ -155,6 +163,7 @@ export default function StudentDashboardPage() {
      PROFILE IMAGE (LOAD)
      ================================================================ */
   const fetchProfileImage = async () => {
+    if (!localStudent) return;
     try {
       const { data } = await supabase
         .from("students")
@@ -172,6 +181,7 @@ export default function StudentDashboardPage() {
      PROFILE IMAGE UPLOAD
      ================================================================ */
   const uploadProfileImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!localStudent) return;
     try {
       if (!e.target.files || e.target.files.length === 0) return;
 
@@ -215,6 +225,7 @@ export default function StudentDashboardPage() {
      CHANGE PASSWORD
      ================================================================ */
   const changePassword = async () => {
+    if (!localStudent) return;
     if (!newPassword || newPassword.length < 6) {
       pushToast("error", "Password must be at least 6 characters");
       return;
@@ -242,10 +253,33 @@ export default function StudentDashboardPage() {
   /* ================================================================
      TIME HELPERS
      ================================================================ */
+  // Accepts "06:00", "06:00am", "6:00pm" etc.
+  const parseTimeString = (str: string) => {
+    // normalize
+    const s = String(str).trim().toLowerCase();
+    // match hh:mm and optional am/pm
+    const m = s.match(/^(\d{1,2}):(\d{2})(am|pm)?$/);
+    if (!m) return null;
+    let hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const ampm = m[3];
+    if (ampm) {
+      if (ampm === "pm" && hh < 12) hh += 12;
+      if (ampm === "am" && hh === 12) hh = 0;
+    }
+    return { hh, mm };
+  };
+
   const todayTime = (str: string) => {
-    const [h, m] = str.split(":").map(Number);
+    const parsed = parseTimeString(str);
     const d = new Date();
-    d.setHours(h, m, 0, 0);
+    if (!parsed) {
+      // fallback: try "HH:MM" split
+      const [h, m] = str.split(":").map(Number);
+      d.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+      return d;
+    }
+    d.setHours(parsed.hh, parsed.mm, 0, 0);
     return d;
   };
 
@@ -270,16 +304,17 @@ export default function StudentDashboardPage() {
 
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    const [hh, mm] = MEAL_WINDOWS.breakfast.start.split(":").map(Number);
-    d.setHours(hh, mm, 0, 0);
+    const p = parseTimeString(MEAL_WINDOWS.breakfast.start) ?? { hh: 6, mm: 0 };
+    d.setHours(p.hh, p.mm, 0, 0);
 
-    return { meal: "breakfast", start: d.getTime() };
+    return { meal: "breakfast" as MealType, start: d.getTime() };
   };
 
   /* ================================================================
      QR SYSTEM
      ================================================================ */
   const checkAndEnsureActiveQR = async () => {
+    if (!localStudent) return;
     try {
       const meal = getCurrentActiveMeal();
       setActiveMealType(meal);
@@ -295,7 +330,7 @@ export default function StudentDashboardPage() {
       const windowEnd = todayTime(MEAL_WINDOWS[meal].end).getTime();
 
       const { data: rows, error } = await supabase
-        .from ("qr_codes")
+        .from("qr_codes")
         .select("*")
         .eq("student_id", localStudent.id)
         .eq("meal_type", meal)
@@ -326,9 +361,7 @@ export default function StudentDashboardPage() {
         setActiveQrImage(created.qr_image_url || null);
         setActiveQrData(created.qr_data || null);
         setActiveQrExpiresAt(
-          created.expires_at
-            ? new Date(created.expires_at).getTime()
-            : windowEnd
+          created.expires_at ? new Date(created.expires_at).getTime() : windowEnd
         );
       }
     } catch (err) {
@@ -338,11 +371,13 @@ export default function StudentDashboardPage() {
   };
 
   const createAndUploadQR = async (mealType: MealType, windowEndMs: number) => {
+    if (!localStudent) return null;
     try {
       const qrObj: QRCodeData = {
-        studentId: localStudent.id,
-        regNumber: localStudent.reg_number,
-        mealType,
+        // match your students table columns: id and reg_number
+        student_id: localStudent.id,
+        reg_number: localStudent.reg_number,
+        meal_type: mealType,
         timestamp: new Date().toISOString(),
         expires: new Date(windowEndMs).toISOString(),
       };
@@ -398,8 +433,17 @@ export default function StudentDashboardPage() {
 
   const generateQRCodeDataURL = async (text: string, size = 300) => {
     // dynamic import to avoid SSR issues
-    const QRCode = await import("qrcode");
-    return await QRCode.toDataURL(text, { width: size, margin: 1 });
+    try {
+      const QRCode = await import("qr_codes");
+      // @ts-ignore
+      return await QRCode.toDataURL(text, { width: size, margin: 1 });
+    } catch (err) {
+      console.error("qrcode import failed", err);
+      // fallback minimal SVG data url
+      return `data:image/svg+xml;base64,${btoa(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='100%' height='100%' fill='#fff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='#000'>QR</text></svg>`
+      )}`;
+    }
   };
 
   const dataURLtoBlob = (dataurl: string) => {
@@ -547,7 +591,12 @@ export default function StudentDashboardPage() {
             <button
               onClick={() => {
                 localStorage.removeItem("user");
-                supabase.auth.signOut();
+                // signOut from supabase auth (if ever used), then redirect
+                try {
+                  supabase.auth.signOut();
+                } catch (e) {
+                  /* ignore */
+                }
                 window.location.href = "/welcome";
               }}
               className="w-full bg-red-600 text-white py-2 rounded mt-3"
@@ -622,9 +671,7 @@ export default function StudentDashboardPage() {
 
                 <p className="text-sm mt-3 text-muted-foreground">
                   Expires in{" "}
-                  <strong>
-                    {formatRemaining(activeQrExpiresAt ?? undefined)}
-                  </strong>
+                  <strong>{formatRemaining(activeQrExpiresAt ?? undefined)}</strong>
                 </p>
               </div>
             ) : (

@@ -15,13 +15,13 @@ export default function WelcomePage() {
       </div>
 
       {/* RIGHT: IMAGE */}
-      <div className="hidden md:flex items-center justify-center bg-muted p-6">
+      <div className="hidden md:flex items-center justify-center bg-muted p-8">
         <Image
           src="/welcome.jpg" // or your image
           alt="Welcome"
-          width={600}
+          width={800}
           height={600}
-          className="rounded-2xl shadow-xl object-cover"
+          className="rounded-1xl shadow-xl object-cover"
         />
       </div>
 

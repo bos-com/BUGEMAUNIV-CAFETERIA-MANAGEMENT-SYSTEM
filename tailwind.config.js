@@ -53,3 +53,19 @@ module.exports = {
   },
   plugins: [],
 }
+module.exports = {
+  theme: {
+    extend: {
+      animation: {
+        gradient: "gradientShift 12s ease infinite",
+      },
+      keyframes: {
+        gradientShift: {
+          "0%": { backgroundPosition: "0% 0%" },
+          "50%": { backgroundPosition: "100% 100%" },
+          "100%": { backgroundPosition: "0% 0%" },
+        },
+      },
+    },
+  },
+};
